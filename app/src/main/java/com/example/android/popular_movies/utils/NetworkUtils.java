@@ -3,6 +3,8 @@ package com.example.android.popular_movies.utils;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.android.popular_movies.Configuration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -17,29 +19,10 @@ import java.util.Scanner;
 public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName();
 
-    private static final String IMAGE_URL = "http://image.tmdb.org/t/p/w185/";
+    final static String QUERY_PARAM = "api_key";
 
-    /* The format we want our API to return */
-    private static final String format = "json";
-    /* The units we want our API to return */
-    private static final String units = "metric";
-    /* The number of days we want our API to return */
-    private static final int numDays = 14;
-
-    final static String QUERY_PARAM = "q";
-    final static String LAT_PARAM = "lat";
-    final static String LON_PARAM = "lon";
-    final static String FORMAT_PARAM = "mode";
-    final static String UNITS_PARAM = "units";
-    final static String DAYS_PARAM = "cnt";
-
-    public static URL buildUrl(String locationQuery) {
-        Uri builtUri = Uri.parse(IMAGE_URL).buildUpon()
-                .appendQueryParameter(QUERY_PARAM, locationQuery)
-                .appendQueryParameter(FORMAT_PARAM, format)
-                .appendQueryParameter(UNITS_PARAM, units)
-                .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
-                .build();
+    public static URL buildUrl(String hostname) {
+        Uri builtUri = buildUri(hostname);
 
         URL url = null;
         try {
@@ -48,14 +31,22 @@ public class NetworkUtils {
             e.printStackTrace();
         }
 
-        Log.v(TAG, "Built URI " + url);
-
         return url;
     }
+    public static Uri buildUri(String hostname) {
+        Configuration configuration = new Configuration();
+        String apiKey = configuration.getMovieDbApiKey();
 
-    public static URL buildUrl(Double lat, Double lon) {
-        /** This will be implemented in a future lesson **/
-        return null;
+        Uri builtUri = Uri.parse(hostname).buildUpon()
+                .appendQueryParameter(QUERY_PARAM, apiKey)
+                .build();
+
+        try {
+            Log.v(TAG, "Built URI " + new URL(builtUri.toString()));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return builtUri;
     }
 
     public static String getResponseFromHttpUrl(URL url) throws IOException {
