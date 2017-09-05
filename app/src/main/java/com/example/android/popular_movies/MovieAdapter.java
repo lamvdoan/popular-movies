@@ -14,10 +14,7 @@ import com.example.android.popular_movies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Created by lamvdoan on 9/4/17.
@@ -28,7 +25,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     private static final String IMAGE_URL = "https://image.tmdb.org/t/p/w185/";
 
     MovieAdapterOnClickHandler mClickHandler;
-    List<String> imageUrlList;
+    List<MovieInfo> movieInfoList;
 
     public MovieAdapter(MovieAdapterOnClickHandler mClickHandler) {
         this.mClickHandler = mClickHandler;
@@ -45,7 +42,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
         @Override
         public void onClick(View v) {
-            // TODO Fill in the details
+            int adapterPosition = getAdapterPosition();
+            mClickHandler.onClick(movieInfoList.get(adapterPosition));
         }
     }
 
@@ -61,7 +59,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder movieAdapterViewHolder, int position) {
-        Uri imageRequestUri = NetworkUtils.buildUri(IMAGE_URL + imageUrlList.get(position));
+        Uri imageRequestUri = NetworkUtils.buildUri(IMAGE_URL + movieInfoList.get(position).getPosterPath());
         Context context = movieAdapterViewHolder.itemView.getContext();
         Picasso.with(context)
                 .load(imageRequestUri)
@@ -90,22 +88,22 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
         }
     }
 
-        @Override
+    @Override
     public int getItemCount() {
-        if (null == imageUrlList) {
-            Log.e(TAG, "Size of imageUrlList is 0!");
+        if (null == movieInfoList) {
+            Log.w(TAG, "Size of movieInfoList is 0!");
             return 0;
         }
 
-        return imageUrlList.size();
+        return movieInfoList.size();
     }
 
     public interface MovieAdapterOnClickHandler {
-        void onClick();
+        void onClick(MovieInfo movieInfo);
     }
 
-    public void setMovieData(List<String> movieData) {
-        imageUrlList = movieData;
+    public void setMovieData(List<MovieInfo> movieData) {
+        movieInfoList = movieData;
         notifyDataSetChanged();
     }
 }
