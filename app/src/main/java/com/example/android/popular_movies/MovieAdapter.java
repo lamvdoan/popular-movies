@@ -1,7 +1,6 @@
 package com.example.android.popular_movies;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,7 +11,6 @@ import android.widget.ImageView;
 
 import com.example.android.popular_movies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Transformation;
 
 import java.util.List;
 
@@ -63,29 +61,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
         Context context = movieAdapterViewHolder.itemView.getContext();
         Picasso.with(context)
                 .load(imageRequestUri)
-//                .transform(new CropSquareTransformation())
-                .resize(540, 540)
-                .centerCrop()
                 .into(movieAdapterViewHolder.mMovieThumbnail);
-    }
-
-    public class CropSquareTransformation implements Transformation {
-        @Override
-        public Bitmap transform(Bitmap source) {
-            int size = Math.min(source.getWidth(), source.getHeight());
-            int x = (source.getWidth() - size) / 2;
-            int y = (source.getHeight() - size) / 2;
-            Bitmap result = Bitmap.createBitmap(source, x, y, size, size);
-            if (result != source) {
-                source.recycle();
-            }
-            return result;
-        }
-
-        @Override
-        public String key() {
-            return "square()";
-        }
     }
 
     @Override
