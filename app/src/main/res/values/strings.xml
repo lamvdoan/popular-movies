@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">popular-movies</string>
+    <string name="error_message">Could not load movies...</string>
+</resources>
