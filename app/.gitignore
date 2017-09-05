@@ -1,0 +1,7 @@
+/build
+compiler.xml
+gradle*
+misc.xml
+modules/xml
+profiles_settings.xml
+runConfigurations.xml
