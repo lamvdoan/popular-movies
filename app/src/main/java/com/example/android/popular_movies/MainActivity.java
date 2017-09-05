@@ -3,6 +3,7 @@ package com.example.android.popular_movies;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -20,7 +21,6 @@ import com.example.android.popular_movies.utils.NetworkUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +43,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
 
         // Initialize Views
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_movies);
@@ -175,10 +180,16 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public void onClick(MovieInfo movieInfo) {
-        URL movieRequestUrl = NetworkUtils.buildUrl(MOVIE_URL + movieInfo.getId());
-        new FetchMovieDetailsTask().execute(movieRequestUrl.toString());
+        try {
+            // Get movie details
+            URL movieRequestUrl = NetworkUtils.buildUrl(MOVIE_URL + movieInfo.getId());
+            movieDetailsJson = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        Intent intent = new Intent(this, MovieDetailsActivity.class);
+//        URL movieRequestUrl = NetworkUtils.buildUrl(MOVIE_URL + movieInfo.getId());
+//        new FetchMovieDetailsTask().execute(movieRequestUrl.toString());
 
 //        while (movieDetailsJson == null) {
 //            try {
@@ -189,6 +200,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 //            }
 //        }
 
+
+        Intent intent = new Intent(this, MovieDetailsActivity.class);
         intent.putExtra(Intent.EXTRA_TEXT, movieDetailsJson);
         startActivity(intent);
     }
