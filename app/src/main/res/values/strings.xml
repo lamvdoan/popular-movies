@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">popular-movies</string>
     <string name="error_message">Could not load movies...</string>
+    <string name="sort_name">Popular/Top Rated</string>
 </resources>

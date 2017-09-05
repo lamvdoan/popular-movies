@@ -5,6 +5,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -24,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     MovieAdapter mMovieAdapter;
     TextView mErrorMessageDisplay;
     ProgressBar mLoadingIndicator;
+
+    boolean isPopularSort = true;
 
     public static final int SPAN_COUNT = 2;
 
@@ -49,11 +54,27 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     }
 
     public void loadMovieData() {
-        // TODO: Add logic for sort order
-        final String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
+        String parameter;
 
+        if (isPopularSort) {
+            parameter = "popular";
+        } else {
+            parameter = "top_rated";
+        }
+
+        final String MOVIE_URL = "https://api.themoviedb.org/3/movie/" + parameter;
+
+        toggleIsPopularFlag();
         showMovieDataView();
         new FetchMovieTask().execute(MOVIE_URL);
+    }
+
+    private void toggleIsPopularFlag() {
+        if(isPopularSort) {
+            isPopularSort = false;
+        } else {
+            isPopularSort = true;
+        }
     }
 
     public class FetchMovieTask extends AsyncTask<String, Void, List<String>> {
@@ -74,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
             try {
                 // Get movie list
-                URL movieRequestUrl = NetworkUtils.buildUrl(movieURL + "popular");
+                URL movieRequestUrl = NetworkUtils.buildUrl(movieURL);
                 String jsonMovieResponse = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
 
                 // Parse the image path from the JSON object
@@ -122,6 +143,25 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     private void showErrorMessage() {
         mRecyclerView.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.sort, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.sort_button) {
+            loadMovieData();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
 }
