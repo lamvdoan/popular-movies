@@ -20,7 +20,6 @@ import java.util.List;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapterViewHolder> {
     private static final String TAG = NetworkUtils.class.getSimpleName();
-    private static final String IMAGE_URL = "https://image.tmdb.org/t/p/w185/";
 
     MovieAdapterOnClickHandler mClickHandler;
     List<MovieInfo> movieInfoList;
@@ -57,7 +56,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder movieAdapterViewHolder, int position) {
-        Uri imageRequestUri = NetworkUtils.buildUri(IMAGE_URL + movieInfoList.get(position).getPosterPath());
+        Uri imageRequestUri = NetworkUtils.buildUri(movieInfoList.get(position).getPosterPath());
         Context context = movieAdapterViewHolder.itemView.getContext();
         Picasso.with(context)
                 .load(imageRequestUri)

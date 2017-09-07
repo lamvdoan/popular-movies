@@ -1,14 +1,15 @@
 package com.example.android.popular_movies;
 
-import android.content.Context;
+import android.app.ActivityManager;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
-    private static final String TAG = NetworkUtils.class.getSimpleName();
     public static final String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
 
     RecyclerView mRecyclerView;
@@ -37,17 +37,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     boolean isPopularSort = true;
 
-    public String movieDetailsJson;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
 
         // Initialize Views
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_movies);
@@ -76,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
         toggleIsPopularFlag();
         showMovieDataView();
-        new FetchMovieTask().execute(MOVIE_URL + parameter);
+        new FetchMovieListTask().execute(MOVIE_URL + parameter);
     }
 
     private void toggleIsPopularFlag() {
@@ -87,8 +80,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         }
     }
 
-    public class FetchMovieTask extends AsyncTask<String, Void, List<MovieInfo>> {
-
+    public class FetchMovieListTask extends AsyncTask<String, Void, List<MovieInfo>> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -101,10 +93,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                 return null;
             }
 
-            String movieURL = params[0];
-
             try {
                 // Get movie list
+                String movieURL = params[0];
                 URL movieRequestUrl = NetworkUtils.buildUrl(movieURL);
                 String jsonMovieListResponse = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
 
@@ -112,13 +103,16 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                 JSONObject object = new JSONObject(jsonMovieListResponse);
                 JSONArray array = object.getJSONArray("results");
 
-                // Store the image URLs into the list
+                // Store the image name and id's into the list
                 List<MovieInfo> movieInfoList = new ArrayList<>();
+
                 for (int i=0; i< array.length(); i++) {
                     JSONObject childJSONObject = array.getJSONObject(i);
+
                     MovieInfo movieInfo = new MovieInfo(
                             childJSONObject.getInt("id"),
                             childJSONObject.getString("poster_path"));
+
                     movieInfoList.add(movieInfo);
                 }
 
@@ -143,66 +137,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         }
     }
 
-    public class FetchMovieDetailsTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            if (params.length == 0) {
-                return null;
-            }
-
-            String movieDetailsURL = params[0];
-
-            try {
-                // Get movie details
-                URL movieRequestUrl = NetworkUtils.buildUrl(movieDetailsURL);
-                return NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String movieInfoDetails) {
-            if (movieInfoDetails != null) {
-                movieDetailsJson = movieInfoDetails;
-            } else {
-                Log.e(TAG, "No movie details!");
-            }
-        }
-    }
-
     @Override
     public void onClick(MovieInfo movieInfo) {
-        try {
-            // Get movie details
-            URL movieRequestUrl = NetworkUtils.buildUrl(MOVIE_URL + movieInfo.getId());
-            movieDetailsJson = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-//        URL movieRequestUrl = NetworkUtils.buildUrl(MOVIE_URL + movieInfo.getId());
-//        new FetchMovieDetailsTask().execute(movieRequestUrl.toString());
-
-//        while (movieDetailsJson == null) {
-//            try {
-//                Log.i(TAG, "Sleeping for 1 second");
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-
-
+        // Send the movie details url to MovieDetailsActivity
         Intent intent = new Intent(this, MovieDetailsActivity.class);
-        intent.putExtra(Intent.EXTRA_TEXT, movieDetailsJson);
+        intent.putExtra("key", MOVIE_URL + movieInfo.getId());
         startActivity(intent);
     }
 
@@ -225,14 +164,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.sort_button) {
+        if (item.getItemId() == R.id.sort_button) {
             loadMovieData();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-
 }
