@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
-    public static final String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
-
     RecyclerView mRecyclerView;
     MovieAdapter mMovieAdapter;
     TextView mErrorMessageDisplay;
@@ -65,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
         toggleIsPopularFlag();
         showMovieDataView();
-        new FetchMovieListTask().execute(MOVIE_URL + parameter);
+        new FetchMovieListTask().execute(parameter);
     }
 
     private void toggleIsPopularFlag() {
@@ -91,8 +89,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
             try {
                 // Get movie list
-                String movieURL = params[0];
-                URL movieRequestUrl = NetworkUtils.buildUrl(movieURL);
+                String endpoint = params[0];
+                URL movieRequestUrl = NetworkUtils.buildUrl(endpoint);
                 String jsonMovieListResponse = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
 
                 // Parse the image path from the JSON object
@@ -137,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     public void onClick(MovieInfo movieInfo) {
         // Send the movie details url to MovieDetailsActivity
         Intent intent = new Intent(this, MovieDetailsActivity.class);
-        intent.putExtra("key", MOVIE_URL + movieInfo.getId());
+        intent.putExtra("key", ((Integer) movieInfo.getId()).toString());
         startActivity(intent);
     }
 

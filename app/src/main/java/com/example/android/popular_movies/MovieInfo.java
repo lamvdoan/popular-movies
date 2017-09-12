@@ -17,6 +17,15 @@ public class MovieInfo {
     private String releaseDate;
     private int runtime;
     private List<String> review;
+    private List<String> key;
+
+    public List<String> getKey() {
+        return key;
+    }
+
+    public void setKey(List<String> key) {
+        this.key = key;
+    }
 
     public List<String> getReview() {
         return review;

@@ -19,11 +19,12 @@ import java.util.Scanner;
 public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName();
 
+    public static final String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
     final static String QUERY_PARAM = "api_key";
 
     public static URL buildUrl(String hostname) {
-        Uri builtUri = buildUri(hostname);
-
+        Uri builtUri = buildUri(MOVIE_URL + hostname);
+;
         URL url = null;
         try {
             url = new URL(builtUri.toString());

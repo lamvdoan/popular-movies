@@ -25,6 +25,7 @@ import java.util.List;
 
 public class MovieDetailsActivity extends AppCompatActivity implements ReviewAdapter.ReviewAdapterOnClickHandler {
     private static final String TAG = NetworkUtils.class.getSimpleName();
+
     MovieInfo movieInfo;
 
     TextView mMovieTitle;
@@ -61,8 +62,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
         // Get the URL string from the MainActivity
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            String movieDetailsUrl = extras.getString("key");
-            new FetchMovieDetailsTask().execute(movieDetailsUrl);
+            String endpoint = extras.getString("key");
+            new FetchMovieDetailsTask().execute(endpoint);
         }
     }
 
@@ -80,27 +81,44 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
 
             try {
                 // Get movie details as a json
-                String movieDetailsURL = params[0];
-                URL movieRequestUrl = NetworkUtils.buildUrl(movieDetailsURL);
+                String endpoint = params[0];
+                URL movieRequestUrl = NetworkUtils.buildUrl(endpoint);
                 String movieInfoDetailsJson = NetworkUtils.getResponseFromHttpUrl(movieRequestUrl);
                 MovieInfo movieInfo = getMovieInfoFromJson(movieInfoDetailsJson);
 
                 // Get Reviews
-                String reviewDetailsURL = "https://api.themoviedb.org/3/movie/" + movieInfo.getId() + "/reviews";
-                URL reviewRequestUrl = NetworkUtils.buildUrl(reviewDetailsURL);
+                String reviewDetailsEndpoint = movieInfo.getId() + "/reviews";
+                URL reviewRequestUrl = NetworkUtils.buildUrl(reviewDetailsEndpoint);
                 String reviewDetailsJson = NetworkUtils.getResponseFromHttpUrl(reviewRequestUrl);
 
                 // Store reviews into movieList object by extracting contents from the results array
-                JSONObject jsonObject = new JSONObject(reviewDetailsJson);
-                JSONArray results = jsonObject.getJSONArray("results");
-
+                JSONObject reviewDetailsObject = new JSONObject(reviewDetailsJson);
+                JSONArray reviewResults = reviewDetailsObject.getJSONArray("results");
                 List<String> contents = new ArrayList<>();
-                for (int i=0; i< results.length(); i++) {
-                    JSONObject childJSONObject = results.getJSONObject(i);
+
+                for (int i=0; i< reviewResults.length(); i++) {
+                    JSONObject childJSONObject = reviewResults.getJSONObject(i);
                     contents.add(childJSONObject.getString("content"));
                 }
 
                 movieInfo.setReview(contents);
+
+                // Get Videos
+                String videoDetailsEndpoint = movieInfo.getId() + "/videos";
+                URL videoRequestUrl = NetworkUtils.buildUrl(videoDetailsEndpoint);
+                String videoDetailsJson = NetworkUtils.getResponseFromHttpUrl(videoRequestUrl);
+
+                // Store keys into movieList object by extracting keys from the results array
+                JSONObject videosDetailObject = new JSONObject(videoDetailsJson);
+                JSONArray videoResults = videosDetailObject.getJSONArray("results");
+                List<String> keys = new ArrayList<>();
+
+                for (int i=0; i< reviewResults.length(); i++) {
+                    JSONObject childJSONObject = videoResults.getJSONObject(i);
+                    keys.add(childJSONObject.getString("key"));
+                }
+
+                movieInfo.setKey(keys);
 
                 return movieInfo;
             } catch (Exception e) {
@@ -122,7 +140,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
                 mUserRating.setText(String.valueOf(movieInfo.getVoteAverage()) + "/10");
 
                 if (movieInfo.getReview() != null) {
-                    Log.i(TAG, "Review: " + movieInfo.getReview());
                     mReviewAdapter.setReviewData(movieInfo.getReview());
                 }
 
