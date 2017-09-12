@@ -113,7 +113,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
                 JSONArray videoResults = videosDetailObject.getJSONArray("results");
                 List<String> keys = new ArrayList<>();
 
-                for (int i=0; i< reviewResults.length(); i++) {
+                for (int i=0; i< videoResults.length(); i++) {
                     JSONObject childJSONObject = videoResults.getJSONObject(i);
                     keys.add(childJSONObject.getString("key"));
                 }
