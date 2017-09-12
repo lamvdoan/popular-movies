@@ -1,5 +1,7 @@
 package com.example.android.popular_movies;
 
+import java.util.List;
+
 /**
  * Created by lamvdoan on 9/5/17.
  */
@@ -14,6 +16,15 @@ public class MovieInfo {
     private double voteAverage;
     private String releaseDate;
     private int runtime;
+    private List<String> review;
+
+    public List<String> getReview() {
+        return review;
+    }
+
+    public void setReview(List<String> review) {
+        this.review = review;
+    }
 
     public MovieInfo() {
     }

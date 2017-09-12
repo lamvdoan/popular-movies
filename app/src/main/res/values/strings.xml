@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">popular-movies</string>
-    <string name="activity_detail">Movie Details</string>
+    <string name="app_name">Pop Movies</string>
+    <string name="movie_detail">Movie Details</string>
+    <string name="review_activity">Review Details</string>
     <string name="error_message">Could not load movies...</string>
     <string name="sort_name">Sort</string>
 </resources>
