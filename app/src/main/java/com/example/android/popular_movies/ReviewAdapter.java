@@ -33,7 +33,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewAdap
         public ReviewAdapterViewHolder(View view) {
             super(view);
             mReview = (TextView) view.findViewById(R.id.review_preview);
-            mLine = view.findViewById(R.id.horizontal_line);
+            mLine = view.findViewById(R.id.review_horizontal_line);
             view.setOnClickListener(this);
         }
 
@@ -62,7 +62,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewAdap
     @Override
     public int getItemCount() {
         if (null == mReviewList) {
-            Log.w(TAG, "Size of mReviewList is 0!");
+            Log.w(TAG, "Size of mTrailerList is 0!");
             return 0;
         }
 

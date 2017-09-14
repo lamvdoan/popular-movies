@@ -23,11 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MovieDetailsActivity extends AppCompatActivity implements ReviewAdapter.ReviewAdapterOnClickHandler {
+public class MovieDetailsActivity extends AppCompatActivity {
     private static final String TAG = NetworkUtils.class.getSimpleName();
 
-    MovieInfo movieInfo;
+    private static final String YOUTUBE_LINK = "https://www.youtube.com/watch?v=";
 
+    MovieInfo movieInfo;
     TextView mMovieTitle;
     ImageView mThumbnail;
     TextView mOverview;
@@ -37,6 +38,11 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
 
     RecyclerView mReviewRecyclerView;
     ReviewAdapter mReviewAdapter;
+    ReviewAdapter.ReviewAdapterOnClickHandler reviewClickHandler;
+
+    RecyclerView mTrailerRecyclerView;
+    TrailerAdapter mTrailerAdapter;
+    TrailerAdapter.TrailerAdapterOnClickHandler mTrailerClickHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +57,40 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
         mRunTime = (TextView) findViewById(R.id.run_time);
         mUserRating = (TextView) findViewById(R.id.user_rating);
 
-//        Initialize RecyclerView for Reviews
+        // Initialize RecyclerView for Reviews
         mReviewRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_review);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         mReviewRecyclerView.setLayoutManager(linearLayoutManager);
         mReviewRecyclerView.setHasFixedSize(true);
-        mReviewAdapter = new ReviewAdapter(this);
+
+        reviewClickHandler = new ReviewAdapter.ReviewAdapterOnClickHandler() {
+            @Override
+            public void onClick(String reviewSummary) {
+                Intent intent = new Intent(MovieDetailsActivity.this, ReviewActivity.class);
+                intent.putExtra(Intent.EXTRA_TEXT, reviewSummary);
+                startActivity(intent);
+            }
+        };
+
+        mReviewAdapter = new ReviewAdapter(reviewClickHandler);
         mReviewRecyclerView.setAdapter(mReviewAdapter);
+
+        // Initialize RecyclerView for Trailer
+        mTrailerRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_trailer);
+        LinearLayoutManager linearLayoutManager2 = new LinearLayoutManager(this);
+        mTrailerRecyclerView.setLayoutManager(linearLayoutManager2);
+        mTrailerRecyclerView.setHasFixedSize(true);
+
+        mTrailerClickHandler = new TrailerAdapter.TrailerAdapterOnClickHandler() {
+            @Override
+            public void onClick(String trailerLink) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(trailerLink));
+                startActivity(intent);
+            }
+        };
+
+        mTrailerAdapter = new TrailerAdapter(mTrailerClickHandler);
+        mTrailerRecyclerView.setAdapter(mTrailerAdapter);
 
         // Get the URL string from the MainActivity
         Bundle extras = getIntent().getExtras();
@@ -96,7 +129,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
                 JSONArray reviewResults = reviewDetailsObject.getJSONArray("results");
                 List<String> contents = new ArrayList<>();
 
-                for (int i=0; i< reviewResults.length(); i++) {
+                for (int i = 0; i < reviewResults.length(); i++) {
                     JSONObject childJSONObject = reviewResults.getJSONObject(i);
                     contents.add(childJSONObject.getString("content"));
                 }
@@ -113,9 +146,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
                 JSONArray videoResults = videosDetailObject.getJSONArray("results");
                 List<String> keys = new ArrayList<>();
 
-                for (int i=0; i< videoResults.length(); i++) {
+                for (int i = 0; i < videoResults.length(); i++) {
                     JSONObject childJSONObject = videoResults.getJSONObject(i);
-                    keys.add(childJSONObject.getString("key"));
+                    keys.add(YOUTUBE_LINK + childJSONObject.getString("key"));
                 }
 
                 movieInfo.setKey(keys);
@@ -141,6 +174,10 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
 
                 if (movieInfo.getReview() != null) {
                     mReviewAdapter.setReviewData(movieInfo.getReview());
+                }
+
+                if (movieInfo.getKey() != null) {
+                    mTrailerAdapter.setTrailerData(movieInfo.getKey());
                 }
 
                 // Load movie thumbnail
@@ -172,12 +209,5 @@ public class MovieDetailsActivity extends AppCompatActivity implements ReviewAda
         }
 
         return movieInfo;
-    }
-
-    @Override
-    public void onClick(String reviewSummary) {
-        Intent intent = new Intent(this, ReviewActivity.class);
-        intent.putExtra(Intent.EXTRA_TEXT, reviewSummary);
-        startActivity(intent);
     }
 }
