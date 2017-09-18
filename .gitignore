@@ -17,3 +17,7 @@ vcs.xml
 credentials
 *.bin
 *.lock
+modules.xml
+.gradle/
+.idea/
+app/src/main/Resources/
