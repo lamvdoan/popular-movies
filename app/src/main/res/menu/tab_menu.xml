@@ -2,8 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/sort_button"
+        android:id="@+id/sort_menu"
         android:orderInCategory="1"
         android:title="@string/sort_name"
+        app:showAsAction="collapseActionView"/>
+
+    <item
+        android:id="@+id/favorite_menu"
+        android:orderInCategory="2"
+        android:title="@string/favorite_name"
         app:showAsAction="collapseActionView"/>
 </menu>

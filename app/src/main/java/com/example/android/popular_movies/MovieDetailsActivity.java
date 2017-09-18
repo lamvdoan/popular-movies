@@ -9,6 +9,10 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,7 +25,9 @@ import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MovieDetailsActivity extends AppCompatActivity {
     private static final String TAG = NetworkUtils.class.getSimpleName();
@@ -29,12 +35,15 @@ public class MovieDetailsActivity extends AppCompatActivity {
     private static final String YOUTUBE_LINK = "https://www.youtube.com/watch?v=";
 
     MovieInfo movieInfo;
+    Map<String, MovieInfo> mFavoritesMap = new HashMap<>();
+
     TextView mMovieTitle;
     ImageView mThumbnail;
     TextView mOverview;
     TextView mReleaseDate;
     TextView mRunTime;
     TextView mUserRating;
+    ImageView mFavoriteButton;
 
     RecyclerView mReviewRecyclerView;
     ReviewAdapter mReviewAdapter;
@@ -56,6 +65,13 @@ public class MovieDetailsActivity extends AppCompatActivity {
         mReleaseDate = (TextView) findViewById(R.id.release_date);
         mRunTime = (TextView) findViewById(R.id.run_time);
         mUserRating = (TextView) findViewById(R.id.user_rating);
+        mFavoriteButton = (ImageView) findViewById(R.id.favorite_button);
+
+        mFavoriteButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mFavoritesMap.put(movieInfo.getOriginalTitle(), movieInfo);
+            }
+        });
 
         // Initialize RecyclerView for Reviews
         mReviewRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_review);
@@ -186,6 +202,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 Picasso.with(context)
                         .load(imageRequestUri)
                         .into(mThumbnail);
+
+                MovieDetailsActivity.this.movieInfo = movieInfo;
             } else {
                 Log.e(TAG, "No movie details!");
             }
@@ -209,5 +227,21 @@ public class MovieDetailsActivity extends AppCompatActivity {
         }
 
         return movieInfo;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.tab_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.favorite_menu) {
+
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

@@ -27,8 +27,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     MovieAdapter mMovieAdapter;
     TextView mErrorMessageDisplay;
     ProgressBar mLoadingIndicator;
-    public static final int SPAN_COUNT = 2;
 
+    private static final int SPAN_COUNT = 2;
     boolean isPopularSort = true;
 
     @Override
@@ -152,15 +152,18 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.sort, menu);
+        inflater.inflate(R.menu.tab_menu, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.sort_button) {
+        if (item.getItemId() == R.id.sort_menu) {
             loadMovieData();
             return true;
+        } else if (item.getItemId() == R.id.favorite_menu) {
+            Intent intent = new Intent(this, FavoriteActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
