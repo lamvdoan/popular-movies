@@ -2,6 +2,7 @@
 /local.properties
 /.idea/workspace.xml
 /.idea/libraries
+/.idea/*
 .DS_Store
 /build
 /captures
@@ -17,3 +18,8 @@ vcs.xml
 credentials
 *.bin
 *.lock
+.gradle/
+app/src/main/Resources/
+.idea/markdown-exported-files.xml
+.idea/markdown-navigator.xml
+.idea/markdown-navigator/
