@@ -185,10 +185,12 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 mUserRating.setText(String.valueOf(movieInfo.getVoteAverage()) + "/10");
 
                 if (movieInfo.getReview() != null) {
+                    // Make Trailers text appear
                     mReviewAdapter.setReviewData(movieInfo.getReview());
                 }
 
                 if (movieInfo.getKey() != null) {
+                    // Make Reviews text appear
                     mTrailerAdapter.setTrailerData(movieInfo.getKey());
                 }
 
