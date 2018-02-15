@@ -14,26 +14,17 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".MovieDetailsActivity"
-            android:label="@string/movie_detail"
-            android:parentActivityName=".MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
-        </activity>
+            android:label="@string/movie_detail"></activity>
+
         <activity
             android:name=".ReviewActivity"
-            android:label="@string/review_activity"
-            android:parentActivityName=".MovieDetailsActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
-        </activity>
+            android:label="@string/review_activity"></activity>
     </application>
 
 </manifest>

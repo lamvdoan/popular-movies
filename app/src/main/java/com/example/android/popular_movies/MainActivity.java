@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     MovieAdapter mMovieAdapter;
     TextView mErrorMessageDisplay;
     ProgressBar mLoadingIndicator;
+    Toolbar myToolbar;
     public static final int SPAN_COUNT = 2;
 
     boolean isPopularSort = true;
@@ -35,6 +37,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
 
         // Initialize Views
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_movies);
@@ -151,9 +156,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.sort, menu);
+        getMenuInflater().inflate(R.menu.sort, menu);
         return true;
+//        MenuInflater inflater = getMenuInflater();
+//        inflater.inflate(R.menu.sort, menu);
+//        return true;
     }
 
     @Override

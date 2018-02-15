@@ -3,6 +3,7 @@ package com.example.android.popular_movies;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
 
 public class ReviewActivity extends AppCompatActivity {
@@ -14,8 +15,11 @@ public class ReviewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_review);
 
-        mReviewDetail = (TextView) findViewById(R.id.review_text);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        mReviewDetail = (TextView) findViewById(R.id.review_text);
         Intent intent = getIntent();
 
         if (intent != null) {
@@ -24,5 +28,11 @@ public class ReviewActivity extends AppCompatActivity {
                 mReviewDetail.setText(mReviewText);
             }
         }
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 }

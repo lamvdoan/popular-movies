@@ -1,17 +1,14 @@
 package com.example.android.popular_movies;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -27,7 +24,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.android.popular_movies.MainActivity.SPAN_COUNT;
 
 public class MovieDetailsActivity extends AppCompatActivity {
     private static final String TAG = NetworkUtils.class.getSimpleName();
@@ -55,6 +51,10 @@ public class MovieDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
 
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         movieInfo = new MovieInfo();
         mMovieTitle = (TextView) findViewById(R.id.movie_title);
         mThumbnail = (ImageView) findViewById(R.id.movie_portrait);
@@ -74,12 +74,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
             public void onClick(String reviewSummary) {
                 Intent intent = new Intent(MovieDetailsActivity.this, ReviewActivity.class);
                 intent.putExtra(Intent.EXTRA_TEXT, reviewSummary);
-//
-//                PendingIntent pendingIntent =
-//                        TaskStackBuilder.create(MovieDetailsActivity.this)
-//                                .addNextIntentWithParentStack(intent)
-//                                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
                 startActivity(intent);
             }
         };
@@ -223,5 +217,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
         }
 
         return movieInfo;
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 }

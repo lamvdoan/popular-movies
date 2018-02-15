@@ -10,8 +10,9 @@
         android:text="@string/sample_review"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textColor="@color/colorBlack"
         android:paddingTop="24dp"
-        android:paddingStart="12dp"
+        android:paddingStart="36dp"
         android:paddingBottom="24dp"/>
 
     <View
