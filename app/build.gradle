@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.3"
     defaultConfig {
         applicationId "com.example.android.popular_movies"
-        minSdkVersion 23
+        minSdkVersion 19 // should be 23, putting 19 for now to load app in physical android
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"

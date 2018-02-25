@@ -10,8 +10,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.android.popular_movies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
@@ -37,6 +39,9 @@ public class MovieDetailsActivity extends AppCompatActivity {
     TextView mReleaseDate;
     TextView mRunTime;
     TextView mUserRating;
+    ImageView mFavorite;
+
+    Boolean isMovieFaved;
 
     RecyclerView mReviewRecyclerView;
     ReviewAdapter mReviewAdapter;
@@ -62,6 +67,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
         mReleaseDate = (TextView) findViewById(R.id.release_date);
         mRunTime = (TextView) findViewById(R.id.run_time);
         mUserRating = (TextView) findViewById(R.id.user_rating);
+        mFavorite = (ImageView) findViewById(R.id.favorite_button);
 
         // Initialize RecyclerView for Reviews
         mReviewRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_review);
@@ -104,6 +110,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
             String endpoint = extras.getString("key");
             new FetchMovieDetailsTask().execute(endpoint);
         }
+
+        isMovieFaved = false;
     }
 
     public class FetchMovieDetailsTask extends AsyncTask<String, Void, MovieInfo> {
@@ -223,5 +231,18 @@ public class MovieDetailsActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return true;
+    }
+
+    public void onClickFavoriteButton(View view) {
+        if (isMovieFaved) {
+            isMovieFaved = false;
+            mFavorite.setImageResource(R.drawable.transparent_star);
+            Toast.makeText(getApplicationContext(), "Removed movie from Favorites", Toast.LENGTH_SHORT).show();
+
+        } else {
+            isMovieFaved = true;
+            mFavorite.setImageResource(R.drawable.yellow_star);
+            Toast.makeText(getApplicationContext(), "Added movie to Favorites", Toast.LENGTH_SHORT).show();
+        }
     }
 }
