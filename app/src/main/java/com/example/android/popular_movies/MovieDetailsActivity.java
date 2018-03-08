@@ -1,7 +1,10 @@
 package com.example.android.popular_movies;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +18,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.popular_movies.data.FavoriteContract.FavoriteEntry;
+import com.example.android.popular_movies.data.TrailerContract;
+import com.example.android.popular_movies.data.TrailerContract.TrailerEntry;
 import com.example.android.popular_movies.utils.NetworkUtils;
 import com.squareup.picasso.Picasso;
 
@@ -41,6 +47,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
     TextView mUserRating;
     ImageView mFavorite;
 
+    Uri imageRequestUri;
+    URL reviewRequestUrl;
     Boolean isMovieFaved;
 
     RecyclerView mReviewRecyclerView;
@@ -135,7 +143,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
                 // Get Reviews
                 String reviewDetailsEndpoint = movieInfo.getId() + "/reviews";
-                URL reviewRequestUrl = NetworkUtils.buildUrl(reviewDetailsEndpoint);
+                reviewRequestUrl = NetworkUtils.buildUrl(reviewDetailsEndpoint);
                 String reviewDetailsJson = NetworkUtils.getResponseFromHttpUrl(reviewRequestUrl);
 
                 // Store reviews into movieList object by extracting contents from the results array
@@ -187,17 +195,17 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 mUserRating.setText(String.valueOf(movieInfo.getVoteAverage()) + "/10");
 
                 if (movieInfo.getReview() != null) {
-                    // Make Trailers text appear
+                    // Make Reviews text appear
                     mReviewAdapter.setReviewData(movieInfo.getReview());
                 }
 
                 if (movieInfo.getKey() != null) {
-                    // Make Reviews text appear
+                    // Make Trailers text appear
                     mTrailerAdapter.setTrailerData(movieInfo.getKey());
                 }
 
                 // Load movie thumbnail
-                Uri imageRequestUri = NetworkUtils.buildUri(movieInfo.getPosterPath());
+                imageRequestUri = NetworkUtils.buildUri(movieInfo.getPosterPath());
                 Context context = mThumbnail.getContext();
                 Picasso.with(context)
                         .load(imageRequestUri)
@@ -239,9 +247,52 @@ public class MovieDetailsActivity extends AppCompatActivity {
             mFavorite.setImageResource(R.drawable.transparent_star);
             Toast.makeText(getApplicationContext(), "Removed movie from Favorites", Toast.LENGTH_SHORT).show();
 
+            // TODO: Delete from database
+
         } else {
-            isMovieFaved = true;
+            /************** Adding to favorites *************/
+
+            // Added to favorite database
+            ContentValues favoriteContentValues = new ContentValues();
+            favoriteContentValues.put(FavoriteEntry.COLUMN_ORIGINAL_TITLE, mMovieTitle.getText().toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_OVERVIEW, mOverview.getText().toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, mReleaseDate.getText().toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_RUNTIME, mRunTime.getText().toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_VOTE_AVERAGE, mUserRating.getText().toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_POSTER_PATH, imageRequestUri.toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_REVIEW, reviewRequestUrl.toString());
+
+            ContentResolver favoriteContentResolver = getContentResolver();
+            favoriteContentResolver.insert(FavoriteEntry.CONTENT_URI, favoriteContentValues);
+
+            // Querying the primary key for the favorites database
+            // TODO: query properly and set favorite_id
+            // TODO: Add content provider to android manifest file
+            Cursor cursor = getContentResolver().query(FavoriteEntry.CONTENT_URI,
+                    null,
+                    null,
+                    null,
+                    null);
+
+            Long favorite_id = 1L;
+
+
+            // Adding to trailer database
+            ContentValues trailerContentValues;
+            ContentResolver trailerContentResolver = getContentResolver();
+
+            List<String> listOfTrailers = movieInfo.getKey();
+
+            for (String trailerLink : listOfTrailers) {
+                trailerContentValues = new ContentValues();
+                trailerContentValues.put(TrailerEntry.COLUMN_YOUTUBE_LINK, trailerLink);
+                trailerContentValues.put(TrailerEntry.COLUMN_FAVORITE_ID, favorite_id);
+
+                trailerContentResolver.insert(TrailerEntry.CONTENT_URI, trailerContentValues);
+            }
+
             mFavorite.setImageResource(R.drawable.yellow_star);
+            isMovieFaved = true;
             Toast.makeText(getApplicationContext(), "Added movie to Favorites", Toast.LENGTH_SHORT).show();
         }
     }
