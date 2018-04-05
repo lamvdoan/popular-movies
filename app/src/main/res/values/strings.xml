@@ -4,6 +4,7 @@
     <string name="review_activity">Review Details</string>
     <string name="error_message">Could not load movies…</string>
     <string name="sort_name">Sort</string>
+    <string name="favorite_sort_name">Favorites</string>
     <string name="thumbnail_content_description">Thumbnail</string>
 
     <string name="sample_movie_name">Chappie</string>

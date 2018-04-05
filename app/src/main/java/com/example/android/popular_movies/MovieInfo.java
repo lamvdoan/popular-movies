@@ -40,7 +40,7 @@ public class MovieInfo {
 
     public MovieInfo(int id, String posterPath) {
         this.id = id;
-        setPosterPath(posterPath);
+        appendPosterPath(posterPath);
     }
 
     public int getId() {
@@ -55,8 +55,12 @@ public class MovieInfo {
         this.id = id;
     }
 
-    public void setPosterPath(String posterPath) {
+    public void appendPosterPath(String posterPath) {
         this.posterPath = IMAGE_URL + posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
     }
 
     public String getOriginalTitle() {

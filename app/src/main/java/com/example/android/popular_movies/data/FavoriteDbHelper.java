@@ -19,21 +19,22 @@ public class FavoriteDbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         final String CREATE_FAVORITES_TABLE = "CREATE TABLE " + FavoriteEntry.TABLE_NAME + " (" +
                 FavoriteEntry._ID + " INTEGER PRIMARY KEY, " +
-                FavoriteEntry.COLUMN_ORIGINAL_TITLE + " TEXT NOT NULL, " +
-                FavoriteEntry.COLUMN_RELEASE_DATE + " TEXT NOT NULL " +
-                FavoriteEntry.COLUMN_RUNTIME + " TEXT NOT NULL, " +
+                FavoriteEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULL, " +
+                FavoriteEntry.COLUMN_ORIGINAL_TITLE + " TEXT NOT NULL UNIQUE, " +
+                FavoriteEntry.COLUMN_RELEASE_DATE + " TEXT NOT NULL, " +
+                FavoriteEntry.COLUMN_RUNTIME + " INTEGER NOT NULL, " +
                 FavoriteEntry.COLUMN_VOTE_AVERAGE + " TEXT NOT NULL, " +
                 FavoriteEntry.COLUMN_POSTER_PATH + " TEXT NOT NULL, " +
                 FavoriteEntry.COLUMN_REVIEW + " TEXT NOT NULL, " +
-                FavoriteEntry.COLUMN_OVERVIEW + " TEXT NOT NULL);";
+                FavoriteEntry.COLUMN_OVERVIEW + " TEXT NOT NULL); ";
         db.execSQL(CREATE_FAVORITES_TABLE);
 
         final String CREATE_TRAILER_TABLE = "CREATE TABLE " + TrailerEntry.TABLE_NAME + "(" +
                 TrailerEntry._ID + " INTEGER PRIMARY KEY, " +
-                TrailerEntry.COLUMN_YOUTUBE_LINK + " TEXT NOT NULL);" +
-                TrailerEntry.COLUMN_FAVORITE_ID + " INTEGER," +
+                TrailerEntry.COLUMN_YOUTUBE_LINK + " TEXT NOT NULL UNIQUE, " +
+                TrailerEntry.COLUMN_FAVORITE_ID + " INTEGER, " +
                 " FOREIGN KEY (" + TrailerEntry.COLUMN_FAVORITE_ID + ") REFERENCES " +
-                FavoriteEntry.TABLE_NAME + "(" + FavoriteEntry._ID + ")";
+                FavoriteEntry.TABLE_NAME + "(" + FavoriteEntry._ID + "));";
 
         db.execSQL(CREATE_TRAILER_TABLE);
     }

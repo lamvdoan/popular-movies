@@ -7,9 +7,11 @@ import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import static com.example.android.popular_movies.data.FavoriteContract.FavoriteEntry;
 import static com.example.android.popular_movies.data.TrailerContract.TrailerEntry;
@@ -19,6 +21,7 @@ public class FavoriteContentProvider extends ContentProvider {
     public static final int FAVORITES_WITH_ID = 101;
     public static final int TRAILERS = 200;
     public static final int TRAILERS_WITH_ID = 201;
+    public static final int TRAILERS_JOIN_WITH_FAVORITES = 202;
 
     private FavoriteDbHelper mFavoriteDbHelper;
     private static final UriMatcher sUriMatcher = buildUriMatcher();
@@ -29,6 +32,7 @@ public class FavoriteContentProvider extends ContentProvider {
         uriMatcher.addURI(FavoriteContract.AUTHORITY, FavoriteContract.PATH_FAVORITES + "/#", FAVORITES_WITH_ID);
         uriMatcher.addURI(TrailerContract.AUTHORITY, TrailerContract.PATH_TRAILERS, TRAILERS);
         uriMatcher.addURI(TrailerContract.AUTHORITY, TrailerContract.PATH_TRAILERS + "/#", TRAILERS_WITH_ID);
+        uriMatcher.addURI(TrailerContract.AUTHORITY, TrailerContract.PATH_TRAILERS_FAVORITES, TRAILERS_JOIN_WITH_FAVORITES);
 
         return uriMatcher;
     }
@@ -53,7 +57,7 @@ public class FavoriteContentProvider extends ContentProvider {
 
         switch (match) {
             case FAVORITES:
-                retCursor =  db.query(FavoriteEntry.TABLE_NAME,
+                retCursor = db.query(FavoriteEntry.TABLE_NAME,
                         projection,
                         selection,
                         selectionArgs,
@@ -61,14 +65,34 @@ public class FavoriteContentProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
+            case FAVORITES_WITH_ID:
+                String id = uri.getPathSegments().get(1);
+                String mSelection = "_id=?";
+                String[] mSelectionArgs = new String[]{id};
+
+                retCursor = db.query(FavoriteEntry.TABLE_NAME,
+                        projection,
+                        mSelection,
+                        mSelectionArgs,
+                        null,
+                        null,
+                        sortOrder);
+                break;
             case TRAILERS:
-                retCursor =  db.query(TrailerEntry.TABLE_NAME,
+                retCursor = db.query(TrailerEntry.TABLE_NAME,
                         projection,
                         selection,
                         selectionArgs,
                         null,
                         null,
                         sortOrder);
+                break;
+            case TRAILERS_JOIN_WITH_FAVORITES:
+                String rawQuery = "SELECT " + TrailerEntry.TABLE_NAME + ".* FROM " + TrailerEntry.TABLE_NAME + " JOIN " + FavoriteEntry.TABLE_NAME +
+                        " ON " + TrailerEntry.COLUMN_FAVORITE_ID + " = " + FavoriteEntry.TABLE_NAME + "." + FavoriteEntry._ID +
+                        " WHERE " + FavoriteEntry.TABLE_NAME + "." + FavoriteEntry._ID + " = ?;";
+                Log.i("CONTENT PROVIDER", "Join Query: " + rawQuery);
+                retCursor = db.rawQuery(rawQuery, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -125,12 +149,12 @@ public class FavoriteContentProvider extends ContentProvider {
 
         switch (match) {
             case FAVORITES_WITH_ID:
-                String favorite_id = uri.getPathSegments().get(1);
-                recordsDeleted = db.delete(FavoriteEntry.TABLE_NAME, "_id=?", new String[]{favorite_id});
+                String favoriteId = uri.getPathSegments().get(1);
+                recordsDeleted = db.delete(FavoriteEntry.TABLE_NAME, "_id=?", new String[]{favoriteId});
                 break;
             case TRAILERS_WITH_ID:
-                String trailer_id = uri.getPathSegments().get(1);
-                recordsDeleted = db.delete(FavoriteEntry.TABLE_NAME, "_id=?", new String[]{trailer_id});
+                String trailerId = uri.getPathSegments().get(1);
+                recordsDeleted = db.delete(TrailerEntry.TABLE_NAME, "_id=?", new String[]{trailerId});
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

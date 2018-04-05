@@ -1,7 +1,11 @@
 package com.example.android.popular_movies;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -9,25 +13,29 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.android.popular_movies.data.FavoriteContract;
 import com.example.android.popular_movies.utils.NetworkUtils;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
+public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler,
+        LoaderManager.LoaderCallbacks<Cursor> {
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private static final int FAVORITES_LOADER_ID = 0;
+    Cursor mFavoriteCursor;
+
     RecyclerView mRecyclerView;
     MovieAdapter mMovieAdapter;
     TextView mErrorMessageDisplay;
@@ -36,9 +44,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     public static final int SPAN_COUNT = 2;
 
     boolean isPopularSort = true;
+    boolean isFavoriteSort = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "*** onCreate executed ***");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -57,12 +67,35 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         mMovieAdapter = new MovieAdapter(this);
         mRecyclerView.setAdapter(mMovieAdapter);
 
+        Log.i(TAG, "Deleting from Database");
+        this.deleteDatabase("favoritesDb.db");
+
         // Load all movie data
-        loadMovieData();
+        if (isFavoriteSort) {
+            Log.i(TAG, "Favorites View");
+            getSupportLoaderManager().initLoader(FAVORITES_LOADER_ID, null, this);
+        } else {
+            Log.i(TAG, "Loading Movies from onCreate");
+            loadMovieData();
+        }
     }
 
-    public void loadMovieData() {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "*** onResume executed ***");
+
+        if(isFavoriteSort) {
+            getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
+        }
+    }
+
+    private void loadMovieData() {
         String parameter;
+        Log.i(TAG, "isPopularSort: " + isPopularSort);
+        Log.i(TAG, "isFavoriteSort: " + isFavoriteSort);
+        setIsFavoriteFalse();
+        Log.i(TAG, "isFavoriteSort: " + isFavoriteSort);
 
         if (isPopularSort) {
             parameter = "popular";
@@ -70,28 +103,47 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
             parameter = "top_rated";
         }
 
-        toggleIsPopularFlag();
         showMovieDataView();
         new FetchMovieListTask().execute(parameter);
     }
 
+    private void loadFavoritesData() {
+        showMovieDataView();
+        getSupportLoaderManager().initLoader(FAVORITES_LOADER_ID, null, this);
+    }
+
     private void toggleIsPopularFlag() {
-        if(isPopularSort) {
+        if (isPopularSort) {
             isPopularSort = false;
         } else {
             isPopularSort = true;
         }
+        Log.i(TAG, "Setting isPopularSort: " + isPopularSort);
+    }
+
+    private void setIsFavoriteTrue() {
+        Log.i(TAG, "State of isFavoriteSort: " + isFavoriteSort);
+            isFavoriteSort = true;
+        Log.i(TAG, "Setting isFavoriteSort: " + isFavoriteSort);
+    }
+
+    private void setIsFavoriteFalse() {
+        Log.i(TAG, "State of isFavoriteSort: " + isFavoriteSort);
+            isFavoriteSort = false;
+        Log.i(TAG, "Setting isFavoriteSort: " + isFavoriteSort);
     }
 
     public class FetchMovieListTask extends AsyncTask<String, Void, List<MovieInfo>> {
         @Override
         protected void onPreExecute() {
+            Log.i(TAG, "Async Task Start");
             super.onPreExecute();
             mLoadingIndicator.setVisibility(View.VISIBLE);
         }
 
         @Override
         protected List<MovieInfo> doInBackground(String... params) {
+            Log.i(TAG, "Async Task Middle");
             if (params.length == 0) {
                 return null;
             }
@@ -109,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                 // Store the image name and id's into the list
                 List<MovieInfo> movieInfoList = new ArrayList<>();
 
-                for (int i=0; i< array.length(); i++) {
+                for (int i = 0; i < array.length(); i++) {
                     JSONObject childJSONObject = array.getJSONObject(i);
 
                     MovieInfo movieInfo = new MovieInfo(
@@ -129,20 +181,119 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
         @Override
         protected void onPostExecute(List<MovieInfo> movieInfoList) {
-            mLoadingIndicator.setVisibility(View.INVISIBLE);
+            Log.i(TAG, "Async Task Finish");
+            displayMovieList(movieInfoList);
+        }
+    }
 
-            if (movieInfoList != null) {
-                showMovieDataView();
-                mMovieAdapter.setMovieData(movieInfoList);
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, final Bundle loaderArgs) {
+        Log.i(TAG, "OnCreateLoader started");
+        return new AsyncTaskLoader<Cursor>(this) {
+            Cursor mFavoriteData = null;
+
+            @Override
+            protected void onStartLoading() {
+                if (mFavoriteData != null) {
+                    deliverResult(mFavoriteData);
+                } else {
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public Cursor loadInBackground() {
+                try {
+                    Cursor cursor = getContentResolver().query(FavoriteContract.FavoriteEntry.CONTENT_URI,
+                            null,
+                            null,
+                            null,
+                            null);
+
+                    Log.i(TAG, "OnCreateLoader Cursor: " + cursor.getCount());
+                    return cursor;
+//                    return getContentResolver().query(FavoriteContract.FavoriteEntry.CONTENT_URI,
+//                            null,
+//                            null,
+//                            null,
+//                            null);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to asynchronously load data.");
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            public void deliverResult(Cursor data) {
+                mFavoriteData = data;
+                super.deliverResult(data);
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor favoriteCursor) {
+        Log.i(TAG, "onLoadFinished started");
+        List<MovieInfo> movieInfoList = new ArrayList<>();
+
+        int movieIdIndex;
+        int posterPathIndex;
+
+        int movieId;
+        String posterPath;
+
+        if (favoriteCursor.getCount() > 0) {
+            favoriteCursor.moveToFirst();
+
+            do {
+                movieIdIndex = favoriteCursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_MOVIE_ID);
+                movieId = favoriteCursor.getInt(movieIdIndex);
+
+                posterPathIndex = favoriteCursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_POSTER_PATH);
+                posterPath = favoriteCursor.getString(posterPathIndex);
+
+                MovieInfo movieInfo = new MovieInfo();
+                movieInfo.setId(movieId);
+                movieInfo.setPosterPath(posterPath);
+
+                movieInfoList.add(movieInfo);
+            } while (favoriteCursor.moveToNext());
+
+            Log.i(TAG, "onLoadFinished Cursor: " + favoriteCursor.getCount());
+            Log.i(TAG, "ID: " + movieInfoList.get(0).getId());
+            displayMovieList(movieInfoList);
+        } else {
+            if (isFavoriteSort) {
+                Log.i(TAG, "Loading Movies from onLoadFinished");
+                loadMovieData();
             } else {
-                showErrorMessage();
+                Toast.makeText(getApplicationContext(),
+                        "No movies are faved.  Add a favorite movie to the list",
+                        Toast.LENGTH_LONG).show();
             }
         }
     }
 
     @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        Log.i(TAG, "onLoaderReset started");
+        mFavoriteCursor = null;
+    }
+
+    private void displayMovieList(List<MovieInfo> movieInfoList) {
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
+
+        if (movieInfoList != null) {
+            Log.i(TAG, "Show movie!");
+            showMovieDataView();
+            mMovieAdapter.setMovieData(movieInfoList);
+        } else {
+            showErrorMessage();
+        }
+    }
+
+    @Override
     public void onClick(MovieInfo movieInfo) {
-        // Send the movie details url to MovieDetailsActivity
         Intent intent = new Intent(this, MovieDetailsActivity.class);
         intent.putExtra("key", ((Integer) movieInfo.getId()).toString());
         startActivity(intent);
@@ -162,16 +313,20 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.sort, menu);
         return true;
-//        MenuInflater inflater = getMenuInflater();
-//        inflater.inflate(R.menu.sort, menu);
-//        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.sort_button) {
-            loadMovieData();
-            return true;
+        switch (item.getItemId()) {
+            case R.id.toggle_sort_button:
+                toggleIsPopularFlag();
+                Log.i(TAG, "Loading Movies from onOptionItemSelected");
+                loadMovieData();
+                return true;
+            case R.id.favorite_sort_button:
+                loadFavoritesData();
+                setIsFavoriteTrue();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
