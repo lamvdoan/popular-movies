@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int FAVORITES_LOADER_ID = 0;
-    Cursor mFavoriteCursor;
+    Cursor mFavoriteCursor = null;
 
     RecyclerView mRecyclerView;
     MovieAdapter mMovieAdapter;
@@ -81,14 +81,46 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        Log.i(TAG, "*** onResume executed ***");
+    protected void onStart() {
+        Log.i(TAG, "*** onStart executed ***");
+        super.onStart();
 
         if(isFavoriteSort) {
             getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
         }
+
     }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "*** onResume executed ***");
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i(TAG, "*** onPause executed ***");
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i(TAG, "*** onStop executed ***");
+        super.onStop();
+    }
+
+    @Override
+    protected void onRestart() {
+        Log.i(TAG, "*** onRestart executed ***");
+        super.onRestart();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "*** onDestroy executed ***");
+        super.onDestroy();
+    }
+
 
     private void loadMovieData() {
         String parameter;
@@ -109,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     private void loadFavoritesData() {
         showMovieDataView();
-        getSupportLoaderManager().initLoader(FAVORITES_LOADER_ID, null, this);
+        getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
     }
 
     private void toggleIsPopularFlag() {
@@ -212,11 +244,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
                     Log.i(TAG, "OnCreateLoader Cursor: " + cursor.getCount());
                     return cursor;
-//                    return getContentResolver().query(FavoriteContract.FavoriteEntry.CONTENT_URI,
-//                            null,
-//                            null,
-//                            null,
-//                            null);
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to asynchronously load data.");
                     e.printStackTrace();
