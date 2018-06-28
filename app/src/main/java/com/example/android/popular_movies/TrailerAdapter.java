@@ -12,10 +12,6 @@ import com.example.android.popular_movies.utils.NetworkUtils;
 
 import java.util.List;
 
-/**
- * Created by lamvdoan on 9/13/17.
- */
-
 
 public class TrailerAdapter extends RecyclerView.Adapter<TrailerAdapter.TrailerAdapterViewHolder> {
     private static final String TAG = NetworkUtils.class.getSimpleName();

@@ -33,18 +33,26 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: Add more docs to all methods
+// TODO: Set caching on by querying the database first, and then pulling reviews from the API.
+// TODO: Read data from cache instead of pulling from internet
+// TODO: Run the test :( to see if it works
+// TODO: Send a flag via intent to only read from db when faved
+// TODO: Restore savedInstanceState
+// TODO: Test rotating devices
 
 public class MovieDetailsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = MovieDetailsActivity.class.getSimpleName();
 
     private static final int FAVORITES_LOADER_ID = 0;
     private static final int TRAILER_LOADER_ID = 1;
+
     Cursor mFavoritesCursor = null;
     Cursor mTrailerCursor = null;
 
     private static final String YOUTUBE_LINK = "https://www.youtube.com/watch?v=";
 
-    int movieId;
+    Integer movieId;
     String movieTitle;
 
     MovieInfo mMovieInfo;
@@ -74,10 +82,14 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
 
+
+        // Toolbar set up
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+
+        // UI Views
         mMovieInfo = new MovieInfo();
         mMovieTitle = (TextView) findViewById(R.id.movie_title);
         mThumbnail = (ImageView) findViewById(R.id.movie_portrait);
@@ -87,10 +99,11 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         mUserRating = (TextView) findViewById(R.id.user_rating);
         mFavorite = (ImageView) findViewById(R.id.favorite_button);
 
+
         // Initialize RecyclerView for Reviews
         mReviewRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_review);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        mReviewRecyclerView.setLayoutManager(linearLayoutManager);
+        LinearLayoutManager linearLayoutManagerForReviews = new LinearLayoutManager(this);
+        mReviewRecyclerView.setLayoutManager(linearLayoutManagerForReviews);
         mReviewRecyclerView.setHasFixedSize(true);
 
         reviewClickHandler = new ReviewAdapter.ReviewAdapterOnClickHandler() {
@@ -105,10 +118,11 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         mReviewAdapter = new ReviewAdapter(reviewClickHandler);
         mReviewRecyclerView.setAdapter(mReviewAdapter);
 
+
         // Initialize RecyclerView for Trailer
         mTrailerRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_trailer);
-        LinearLayoutManager linearLayoutManager2 = new LinearLayoutManager(this);
-        mTrailerRecyclerView.setLayoutManager(linearLayoutManager2);
+        LinearLayoutManager linearLayoutManagerForTrailer = new LinearLayoutManager(this);
+        mTrailerRecyclerView.setLayoutManager(linearLayoutManagerForTrailer);
         mTrailerRecyclerView.setHasFixedSize(true);
 
         mTrailerClickHandler = new TrailerAdapter.TrailerAdapterOnClickHandler() {
@@ -122,20 +136,39 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         mTrailerAdapter = new TrailerAdapter(mTrailerClickHandler);
         mTrailerRecyclerView.setAdapter(mTrailerAdapter);
 
+
         // Get the URL string from the MainActivity
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             String movieId = extras.getString("key");
             this.movieId = Integer.valueOf(movieId);
-            new FetchMovieDetailsTask().execute(movieId);
-        }
-    }
+            getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, MovieDetailsActivity.this);
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.i(TAG, "*** onStart executed ***");
-        getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
+            // Check the cache for the movie
+            if (mFavoritesCursor != null) {
+                mFavoritesCursor.moveToFirst();
+                MovieInfo movieInfo = new MovieInfo();
+
+                movieInfo.setId(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_MOVIE_ID));
+                movieInfo.setOriginalTitle(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_ORIGINAL_TITLE)));
+                movieInfo.setOverview(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_OVERVIEW)));
+                movieInfo.setVoteAverage(Double.parseDouble(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_VOTE_AVERAGE))));
+                movieInfo.setReleaseDate(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_RELEASE_DATE)));
+                movieInfo.setRuntime(mFavoritesCursor.getInt(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_RUNTIME)));
+                movieInfo.setPosterPath(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_POSTER_PATH)));
+
+                // TODO: Fetch reviews and trailers
+                // TODO: Create AsyncTask to fetch trailers and reviews separately
+                // TODO: Pull that out of the FetchMovieDetailsTask
+                String reviewLink  = mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry.COLUMN_REVIEW));
+
+                setUIValues(movieInfo);
+            } else {
+                new FetchMovieDetailsTask().execute(movieId);
+            }
+        } else {
+            Log.e(TAG, "We got a problem, intent.getExtras() is null!!!");
+        }
     }
 
     public class FetchMovieDetailsTask extends AsyncTask<String, Void, MovieInfo> {
@@ -204,42 +237,55 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         @Override
         protected void onPostExecute(MovieInfo movieInfo) {
             Log.i(TAG, "Async Task: onPostExecute");
-
-            // Set the view with movie details
-            if (movieInfo != null) {
-                // Set movie info
-                movieTitle = movieInfo.getOriginalTitle();
-                Log.i(TAG, "Movie Title: " + movieTitle);
-                mMovieTitle.setText(movieTitle);
-                mOverview.setText(movieInfo.getOverview());
-                mRunTime.setText(String.valueOf(movieInfo.getRuntime()) + "min");
-                mReleaseDate.setText(String.valueOf(movieInfo.getReleaseDate()).substring(0, 4));
-                mUserRating.setText(String.valueOf(movieInfo.getVoteAverage()) + "/10");
-                mMovieInfo = movieInfo;
-
-
-                if (movieInfo.getReview() != null) {
-                    // Make Reviews text appear
-                    mReviewAdapter.setReviewData(movieInfo.getReview());
-                }
-
-                if (movieInfo.getKey() != null) {
-                    // Make Trailers text appear
-                    mTrailerAdapter.setTrailerData(movieInfo.getKey());
-                }
-
-                // Load movie thumbnail
-                imageRequestUri = NetworkUtils.buildUri(movieInfo.getPosterPath());
-                Context context = mThumbnail.getContext();
-                Picasso.with(context)
-                        .load(imageRequestUri)
-                        .into(mThumbnail);
-            } else {
-                Log.e(TAG, "No movie details!");
-            }
+            setUIValues(movieInfo);
         }
     }
 
+    /**
+     * Set movie info to the View objects
+     *
+     * @param movieInfo
+     */
+    private void setUIValues(MovieInfo movieInfo) {
+        // Set the view with movie details
+        if (movieInfo != null) {
+            // Set movie info
+            movieTitle = movieInfo.getOriginalTitle();
+            Log.i(TAG, "Movie Title: " + movieTitle);
+            mMovieTitle.setText(movieTitle);
+            mOverview.setText(movieInfo.getOverview());
+            mRunTime.setText(String.valueOf(movieInfo.getRuntime()) + "min");
+            mReleaseDate.setText(String.valueOf(movieInfo.getReleaseDate()).substring(0, 4));
+            mUserRating.setText(String.valueOf(movieInfo.getVoteAverage()) + "/10");
+            mMovieInfo = movieInfo;
+
+
+            if (movieInfo.getReview() != null) {
+                // Make Reviews text appear
+                mReviewAdapter.setReviewData(movieInfo.getReview());
+            }
+
+            if (movieInfo.getKey() != null) {
+                // Make Trailers text appear
+                mTrailerAdapter.setTrailerData(movieInfo.getKey());
+            }
+
+            // Load movie thumbnail
+            imageRequestUri = NetworkUtils.buildUri(movieInfo.getPosterPath());
+            Context context = mThumbnail.getContext();
+            Picasso.with(context)
+                    .load(imageRequestUri)
+                    .into(mThumbnail);
+        } else {
+            Log.e(TAG, "No movie details!");
+        }
+    }
+
+    /**
+     * Wire the movie info from the json string to the movieInfo object.  Used by the API.
+     * @param jsonString
+     * @return
+     */
     private MovieInfo getMovieInfoFromJson(String jsonString) {
         MovieInfo movieInfo = new MovieInfo();
 
@@ -265,19 +311,26 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         return true;
     }
 
+    /**
+     * When favorite button is clicked, check if it's faved.
+     *
+     * If faved, then delete the record from the database
+     * If not faved, then add the record to the database
+     *
+     * @param view
+     */
     public void onClickFavoriteButton(View view) {
+        Log.i(TAG, "Movie is faved...");
         if (isMovieFaved) {
             // ************* Deleting from favorites ************ //
             int favoriteId;
 
-            getSupportLoaderManager().initLoader(FAVORITES_LOADER_ID, null, this);
+            getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
 
             // Get favoriteId, foreign key of Trailers table
             if (mFavoritesCursor != null && mFavoritesCursor.getCount() == 1) {
-                int index = mFavoritesCursor.getColumnIndex(FavoriteEntry._ID);
-                Log.i(TAG, "favoriteCursor: " + index);
                 mFavoritesCursor.moveToFirst();
-                favoriteId = mFavoritesCursor.getInt(index);
+                favoriteId = mFavoritesCursor.getInt(mFavoritesCursor.getColumnIndex(FavoriteEntry._ID));
             } else {
                 Log.e(TAG, "favoriteCursor is null.. count: " + mFavoritesCursor.getCount());
                 return;
@@ -285,7 +338,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
             Bundle bundle = new Bundle();
             bundle.putInt("favoriteId", favoriteId);
-            getSupportLoaderManager().initLoader(TRAILER_LOADER_ID, bundle, this);
+            getSupportLoaderManager().restartLoader(TRAILER_LOADER_ID, bundle, this);
             Log.i(TAG, "TrailerCursor Count: " + mTrailerCursor.getCount());
 
             // Get cursor with all trailers that need to be deleted
@@ -293,12 +346,10 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
                 // Delete from Trailers first due to Foreign Key Constraint in Favorites
                 Uri trailerUri;
-                int index;
                 long trailerId;
 
                 while (mTrailerCursor.moveToNext()) {
-                    index = mTrailerCursor.getColumnIndex(TrailerEntry._ID);
-                    trailerId = mTrailerCursor.getLong(index);
+                    trailerId = mTrailerCursor.getLong(mTrailerCursor.getColumnIndex(TrailerEntry._ID));
 
                     trailerUri = TrailerEntry.CONTENT_URI;
                     trailerUri = trailerUri.buildUpon().appendPath(String.valueOf(trailerId)).build();
@@ -311,7 +362,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
                 // Delete from Favorites
                 Uri favoritesUri = FavoriteEntry.CONTENT_URI;
                 favoritesUri = favoritesUri.buildUpon().appendPath(String.valueOf(favoriteId)).build();
-                Log.i(TAG, "Favorites URI: " + favoritesUri);
+                Log.i(TAG, "Favorites Delete URI: " + favoritesUri);
 
                 int favoriteRecordsDeleted = getContentResolver().delete(favoritesUri, null, null);
                 Log.i(TAG, "Favorites Deleted: " + favoriteRecordsDeleted);
@@ -320,109 +371,109 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
             }
         } else {
             // ************* Adding to favorites ************ //
+            Log.i(TAG, "Movie is NOT faved...");
 
             // Added to favorite database
             ContentValues favoriteContentValues = new ContentValues();
             favoriteContentValues.put(FavoriteEntry.COLUMN_MOVIE_ID, movieId);
             favoriteContentValues.put(FavoriteEntry.COLUMN_ORIGINAL_TITLE, mMovieTitle.getText().toString());
-            favoriteContentValues.put(FavoriteEntry.COLUMN_OVERVIEW, mOverview.getText().toString());
             favoriteContentValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, mReleaseDate.getText().toString());
             favoriteContentValues.put(FavoriteEntry.COLUMN_RUNTIME, mRunTime.getText().toString());
             favoriteContentValues.put(FavoriteEntry.COLUMN_VOTE_AVERAGE, mUserRating.getText().toString());
             favoriteContentValues.put(FavoriteEntry.COLUMN_POSTER_PATH, imageRequestUri.toString());
             favoriteContentValues.put(FavoriteEntry.COLUMN_REVIEW, reviewRequestUrl.toString());
+            favoriteContentValues.put(FavoriteEntry.COLUMN_OVERVIEW, mOverview.getText().toString());
 
             Uri favoriteUri = getContentResolver().insert(FavoriteEntry.CONTENT_URI, favoriteContentValues);
             Log.i(TAG, "Favorites Insert URI: " + favoriteUri);
 
             if (mMovieInfo.getKey().size() > 0) {
+                getSupportLoaderManager().restartLoader(FAVORITES_LOADER_ID, null, this);
+            }
+
+            // Query favorite_id
+            if (mFavoritesCursor != null && mFavoritesCursor.getCount() == 1) {
                 Long favoriteId = null;
 
-                // TODO: Async task is finishing after cursorloader starts, problem for data dependency
-                // TODO: Read data from cache instead of pulling from internet
-                // TODO: Restore savedInstanceState
-                // TODO: Test rotating devices
-                // TODO: Send a flag via intent to only read from db when faved
+                mFavoritesCursor.moveToFirst();
+                favoriteId = Long.parseLong(mFavoritesCursor.getString(mFavoritesCursor.getColumnIndex(FavoriteEntry._ID)));
 
-                getSupportLoaderManager().initLoader(FAVORITES_LOADER_ID, null, this);
+                // Adding to trailer database
+                ContentValues trailerContentValues;
+                ContentResolver trailerContentResolver = getContentResolver();
 
-                // Query favorite_id
-                if (mFavoritesCursor != null && mFavoritesCursor.getCount() == 1) {
-                    int index = mFavoritesCursor.getColumnIndex(FavoriteEntry._ID);
-                    mFavoritesCursor.moveToFirst();
-                    favoriteId = Long.parseLong(mFavoritesCursor.getString(index));
+                List<String> listOfTrailers = mMovieInfo.getKey();
 
-                    // Adding to trailer database
-                    ContentValues trailerContentValues;
-                    ContentResolver trailerContentResolver = getContentResolver();
+                for (String trailerLink : listOfTrailers) {
+                    trailerContentValues = new ContentValues();
+                    trailerContentValues.put(TrailerEntry.COLUMN_YOUTUBE_LINK, trailerLink);
+                    trailerContentValues.put(TrailerEntry.COLUMN_FAVORITE_ID, favoriteId);
 
-                    List<String> listOfTrailers = mMovieInfo.getKey();
-
-                    for (String trailerLink : listOfTrailers) {
-                        trailerContentValues = new ContentValues();
-                        trailerContentValues.put(TrailerEntry.COLUMN_YOUTUBE_LINK, trailerLink);
-                        trailerContentValues.put(TrailerEntry.COLUMN_FAVORITE_ID, favoriteId);
-
-                        Uri trailerUri = trailerContentResolver.insert(TrailerEntry.CONTENT_URI, trailerContentValues);
-                        Log.i(TAG, "Trailer Insert URI: " + trailerUri);
-                    }
-                } else {
-                    Log.e(TAG, "favoriteCursor is null.. count: " + mFavoritesCursor.getCount());
-                    // TODO handle in this case
+                    Uri trailerUri = trailerContentResolver.insert(TrailerEntry.CONTENT_URI, trailerContentValues);
+                    Log.i(TAG, "Trailer Insert URI: " + trailerUri);
                 }
+            } else {
+                Log.e(TAG, "favoriteCursor is null.. count: " + String.valueOf(mFavoritesCursor.getCount()));
+                // TODO handle in this case
             }
 
             movieFaved();
         }
     }
 
+    /**
+     * Fave the movie and fill in the yellow star
+     */
     private void movieFaved() {
+        Log.i(TAG, "isMovieFaved: " + isMovieFaved + "Now: true");
         mFavorite.setImageResource(R.drawable.yellow_star);
         isMovieFaved = true;
-        Log.i(TAG, "isMovieFaved: " + isMovieFaved);
     }
 
+    /**
+     * Unfave the movie and fill in the transparent star
+     */
     private void movieUnfaved() {
+        Log.i(TAG, "isMovieFaved: " + isMovieFaved + "Now: false");
         mFavorite.setImageResource(R.drawable.transparent_star);
         isMovieFaved = false;
-        Log.i(TAG, "isMovieFaved: " + isMovieFaved);
     }
 
+    /**
+     * Get Movie Info from the database
+     *
+     * @param loaderId Database table type
+     * @param args     Movie info
+     * @return
+     */
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    public Loader<Cursor> onCreateLoader(int loaderId, final Bundle args) {
         Log.i(TAG, "onCreateLoader started");
         final Bundle bundle = args;
 
-//        Object result = asyncTask.execute().get();
-
-        switch (id) {
+        switch (loaderId) {
             case FAVORITES_LOADER_ID:
                 return new AsyncTaskLoader<Cursor>(this) {
-                    Cursor mFavoriteData = null;
 
                     @Override
                     protected void onStartLoading() {
-                        if (mFavoriteData != null) {
-                            deliverResult(mFavoriteData);
-                        } else {
-                            forceLoad();
-                        }
+                        forceLoad();
                     }
 
                     @Override
                     public Cursor loadInBackground() {
                         try {
+                            Log.i(TAG, "Movie Id (Favorite Loader): " + movieId);
                             String[] mFavoriteProjection = {FavoriteEntry._ID};
-                            Log.i(TAG, "Movie Title (Loader): " + movieTitle);
-                            String[] mFavoriteSelectionArgs = {mMovieTitle.getText().toString()};
+                            String[] mFavoriteSelectionArgs = {movieId.toString()};
 
                             Cursor cursor = getContentResolver().query(
                                     FavoriteEntry.CONTENT_URI,
                                     mFavoriteProjection,
-                                    FavoriteEntry.COLUMN_ORIGINAL_TITLE + "=?",
+                                    FavoriteEntry.COLUMN_MOVIE_ID + "=?",
                                     mFavoriteSelectionArgs,
                                     null);
-                            Log.i(TAG, "OnCreateLoader Cursor: " + cursor.getCount());
+                            Log.i(TAG, "AsyncTaskLoader Favorites Cursor: " + cursor.getCount());
                             return cursor;
 
                         } catch (Exception e) {
@@ -432,36 +483,35 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
                         }
                     }
 
+                    @Override
                     public void deliverResult(Cursor data) {
-                        mFavoriteData = data;
+                        mFavoritesCursor = data;
                         super.deliverResult(data);
                     }
                 };
             case TRAILER_LOADER_ID:
                 return new AsyncTaskLoader<Cursor>(this) {
-                    Cursor mTrailerData = null;
 
                     @Override
                     protected void onStartLoading() {
-                        if (mTrailerCursor != null) {
-                            deliverResult(mTrailerData);
-                        } else {
-                            forceLoad();
-                        }
+                        forceLoad();
                     }
 
                     @Override
                     public Cursor loadInBackground() {
                         try {
+                            Log.i(TAG, "Movie Id (Trailer Loader): " + movieId);
                             String favoriteId = String.valueOf(bundle.getInt("favoriteId"));
                             String[] mTrailerSelectionArgs = {favoriteId};
 
-                            return getContentResolver().query(
+                            Cursor cursor = getContentResolver().query(
                                     TrailerEntry.JOIN_CONTENT_URI,
                                     null,
                                     null,
                                     mTrailerSelectionArgs,
                                     null);
+                            Log.i(TAG, "AsyncTaskLoader Trailer Cursor: " + cursor.getCount());
+                            return cursor;
                         } catch (Exception e) {
                             Log.e(TAG, "Failed to asynchronously load data.");
                             e.printStackTrace();
@@ -469,8 +519,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
                         }
                     }
 
+                    @Override
                     public void deliverResult(Cursor data) {
-                        mTrailerData = data;
+                        mTrailerCursor = data;
                         super.deliverResult(data);
                     }
                 };
@@ -485,15 +536,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         switch (loader.getId()) {
             case FAVORITES_LOADER_ID:
                 mFavoritesCursor = data;
-
-                Log.i(TAG, "FavoriteCursor Count: " + mFavoritesCursor.getCount());
-                if (mFavoritesCursor.getCount() == 0) {
-                    movieUnfaved();
-                } else {
-                    movieFaved();
-                }
-                Log.i(TAG, "Load Cursor setting isMovieFaved: " + isMovieFaved);
-
                 break;
             case TRAILER_LOADER_ID:
                 mTrailerCursor = data;

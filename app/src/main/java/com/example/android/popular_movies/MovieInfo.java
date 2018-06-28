@@ -10,14 +10,14 @@ public class MovieInfo {
     private static String IMAGE_URL = "https://image.tmdb.org/t/p/w185/";
 
     private int id;
-    private String posterPath;
     private String originalTitle;
-    private String overview;
-    private double voteAverage;
     private String releaseDate;
     private int runtime;
+    private double voteAverage;
+    private String posterPath;
     private List<String> review;
     private List<String> key;
+    private String overview;
 
     public List<String> getKey() {
         return key;
